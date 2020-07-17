@@ -1,9 +1,9 @@
-import React, { useState, FormEvent } from "react";
+import React, { useState, useEffect, FormEvent } from "react";
 import { FiChevronRight } from "react-icons/fi";
 
+import { Link } from "react-router-dom";
 import api from "../../services/api";
-import { Title, Form, Repositories , Error } from "./style";
-import Repository from "../Repository";
+import { Title, Form, Repositories, Error } from "./style";
 
 interface Repository {
   full_name: string;
@@ -22,7 +22,21 @@ const logo: string =
 const Dashboard: React.FC = () => {
   const [newRepo, setNewRepo] = useState("");
   const [inputError, setInputError] = useState("");
-  const [repositories, setRepositories] = useState<Repository[]>([]);
+  const [repositories, setRepositories] = useState<Repository[]>(() => {
+    const storagedRepos = localStorage.getItem("@gitexplorer:repositories");
+    if (storagedRepos) {
+      return JSON.parse(storagedRepos);
+    } else {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      "@gitexplorer:repositories",
+      JSON.stringify(repositories)
+    );
+  }, [newRepo]);
 
   async function handleAddRepository(
     event: FormEvent<HTMLFormElement>
@@ -50,7 +64,7 @@ const Dashboard: React.FC = () => {
       <img src={logo} alt="logo" />
       <Title>Dashboard</Title>
 
-      <Form onSubmit={handleAddRepository}>
+      <Form hasError={!!inputError} onSubmit={handleAddRepository}>
         <input
           value={newRepo}
           onChange={(e): void => setNewRepo(e.target.value)}
@@ -59,18 +73,18 @@ const Dashboard: React.FC = () => {
         />
         <button>Pesquisar</button>
       </Form>
-      {inputError && ( <Error>{inputError}</Error>)}
+      {inputError && <Error>{inputError}</Error>}
 
       <Repositories>
         {repositories.map((repo) => (
-          <a key={repo.full_name} href="https://localhost:3333">
+          <Link key={repo.full_name} to={`/repository/${repo.full_name}`}>
             <img src={repo.owner.avatar_url} alt="Profile" />
             <div>
               <strong>{repo.full_name}</strong>
               <p>{repo.description}</p>
             </div>
             <FiChevronRight />
-          </a>
+          </Link>
         ))}
       </Repositories>
     </>
